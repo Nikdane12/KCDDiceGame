@@ -44,6 +44,7 @@ export class game{
             roll: this.playingDice.map(x=>({id:x.id, result:x.result})), 
             bust: this.bust,
             selectedScore: this.calcScore(this.heldDice),
+            roundScore: this.roundScore,
             winThreshhold: this.winThreshhold,
             gameState: this.gameState
         }
@@ -80,7 +81,8 @@ export class game{
         }
     }
 
-    userSelects(){
+    userSelects(id){
+        if(!selectedDieIds.includes(id)) selectedDieIds.push(id)
         return this.getGameState()
     }
 
@@ -335,32 +337,31 @@ export class die{
 
 
 
-export class player{
-    constructor(name) {
-        this.name = name;
-        this.score = 0;
-        this.diceLibrary = [];
+export class player {
+  constructor(name, idArr = []) {
+    this.name = name;
+    this.score = 0;
+    this.diceLibrary = [];
+    this.setPool(idArr);
+  }
+
+  setPool(idArr = []) {
+    if (idArr.length > 6) {
+      throw new Error(`Max dice 6. Dice: ${idArr}, tot: ${idArr.length}`);
     }
 
-    setPool(idArr){
-        if(idArr.length > 6) {
-            throw new Error(`Max dice 6. Dice: ${idArr}, tot: ${idArr.length}`);
-        }
-        this.diceLibrary = [];
-        idArr.forEach(e => {
-            this.diceLibrary.push(new die(e))
-        });
-        this.fillStrdPool();
-        return this.diceLibrary;
-    }
+    this.diceLibrary = idArr.map(id => new die(id));
+    this.fillStrdPool();
+    return this.diceLibrary;
+  }
 
-    fillStrdPool(){
-        while (this.diceLibrary.length < 6) {
-            this.diceLibrary.push(new die(1));
-        }       
+  fillStrdPool() {
+    while (this.diceLibrary.length < 6) {
+      this.diceLibrary.push(new die(1));
     }
-
+  }
 }
+
 
 
 
