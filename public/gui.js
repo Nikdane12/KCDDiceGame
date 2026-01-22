@@ -1,13 +1,26 @@
 import * as game from './code.js'
+import * as utils from './utils.js'
 
 
 const playerslist = document.getElementById('playersInput')
 const startbutton = document.getElementById('startGame')
 const bodyText = document.getElementById('bodyText')
 
-const continueButton = document.getElementById('continueButton')
+const continueButton = document.getElementById('continueButton');
+continueButton.addEventListener('click', () => {
+    newGame.continueAction();
+    foo();
+})
 const saveButton = document.getElementById('saveButton')
+saveButton.addEventListener('click', () => {
+    newGame.saveAction();
+    foo();    
+})
 const passButton = document.getElementById('passButton')
+passButton.addEventListener('click', () => {
+    newGame.passAction();
+    foo();    
+})
 
 const diceCont = document.getElementById('diceCont')
 
@@ -34,6 +47,12 @@ const selectOponent = () => {
     return opponent
 }
 
+const foo = () => {
+    updateText();
+    buttonControl();
+    renderDice();
+}
+
 const buttonControl = () => {
     let data = newGame?.getGameState()
     saveButton.disabled = !(data?.canSave)    
@@ -46,9 +65,7 @@ buttonControl()
 startbutton.onclick = () => {
     newGame = new game.game(user, selectOponent())
     newGame.startGame();
-    updateText();
-    buttonControl()
-    renderDice()
+    foo();
 }
 
 const updateText = () => {
@@ -62,9 +79,10 @@ const updateText = () => {
     bodyText.innerText = text;
 }
 
-const renderDice = () => {   
+const renderDice = () => {
+    utils.removeAllChildren(diceCont)   
     newGame.getGameState().roll.forEach(e => {
-        diceCont.appendChild(DiceMaker(e))       
+        diceCont.appendChild(DiceMaker(e)); 
     });
 }
 
@@ -74,7 +92,12 @@ const DiceMaker = (diceObj) => {
     dice.style.height = '20px'
     dice.innerText = diceObj.result
     dice.addEventListener('click', () => {
-        console.log(diceObj);
+        newGame.userSelects(diceObj.uniqId)
+        buttonControl()
+        updateText()
+        console.log(newGame.heldDice);
+        
     })
     return dice
 }
+

@@ -41,7 +41,7 @@ export class game{
             currentplayer: this.currentplayer,
             players: this.players,
             canSave: this.calcScore(this.heldDice) > 0,
-            roll: this.playingDice.map(x=>({id:x.id, result:x.result})), 
+            roll: this.playingDice.map(x=>({uniqId:x.uniqId, result:x.result})), 
             bust: this.bust,
             selectedScore: this.calcScore(this.heldDice),
             roundScore: this.roundScore,
@@ -81,13 +81,25 @@ export class game{
         }
     }
 
-    userSelects(id){
-        if(!selectedDieIds.includes(id)) selectedDieIds.push(id)
+    userSelects(uniqId){
+        const heldIdx = this.heldDice.findIndex(d => d.uniqId === uniqId);
+        if (heldIdx !== -1) {
+            const [die] = this.heldDice.splice(heldIdx, 1);
+            this.playingDice.push(die);
+            return this.getGameState();
+        }
+
+        const playIdx = this.playingDice.findIndex(d => d.uniqId === uniqId);
+        if (playIdx !== -1) {
+            const [die] = this.playingDice.splice(playIdx, 1);
+            this.heldDice.push(die);
+        }
         return this.getGameState()
     }
 
     continueAction(){
-        this.roundScore += this.selectedScore
+        this.roundScore += this.getGameState().selectedScore
+        this.heldDice = [];        
         this.roll()
     }
 
@@ -309,18 +321,23 @@ export class game{
 
 export class die{
 
+    static #nextUid = 1;
+
     #diceLib = [
         {id: 1, name: 'Standard Die', sides: [1, 2, 3, 4, 5, 6]},
         {id: 2, name: 'Cheat Die', sides: [1, 1, 1, 1, 1, 1]},
     ]
 
-    #data
+    #data;
     #result = null;
+    uniqId;
 
     constructor(dieId){
         const data = this.#diceLib.find(d => d.id === dieId);
         if (!data) throw new Error(`No die found: id ${dieId}`);
         this.#data = data;
+
+        this.uniqId = die.#nextUid++
     }
 
     roll(){
