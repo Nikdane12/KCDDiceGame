@@ -40,10 +40,10 @@ export class game{
         return {
             currentplayer: this.currentplayer,
             players: this.players,
-            canSave: this.calcScore(this.heldDice) > 0,
+            canSave: this.#calcScore(this.heldDice) > 0,
             roll: this.playingDice.map(x=>({uniqId:x.uniqId, result:x.result})), 
             bust: this.bust,
-            selectedScore: this.calcScore(this.heldDice),
+            selectedScore: this.#calcScore(this.heldDice),
             roundScore: this.roundScore,
             winThreshhold: this.winThreshhold,
             gameState: this.gameState
@@ -62,23 +62,18 @@ export class game{
         this.playingDice = [...this.currentplayer.diceLibrary];
         this.heldDice = [];
         this.bust = false;
-        this.roll()
-        this.setBust()
         
-        return this.getGameState()       
+        return this.#rollAndResolve()       
     }
 
-    roll(){
+    
+
+    #roll(){
         this.playingDice.forEach(die => die.roll());
     }
 
-    setBust(){
-        if(this.calcScore(this.playingDice) < 1){
-            this.bust = false;
-        } 
-        else{
-            this.bust = true;
-        }
+    #setBust(){
+          this.bust = this.#calcScore(this.playingDice) < 1;
     }
 
     userSelects(uniqId){
@@ -97,19 +92,44 @@ export class game{
         return this.getGameState()
     }
 
+    #bankDice(){
+        const selected = this.#calcScore(this.heldDice);
+        if (selected <= 0) return;
+        this.roundScore += selected;
+        this.heldDice = [];
+    }
+
+    #rollAndResolve(){
+        this.#roll();
+        this.#setBust();
+
+        if (this.bust) {
+            this.roundScore = 0;
+            this.heldDice = [];
+            return this.nextPlayerTurn();
+        }
+
+        return this.getGameState();
+    }
+
     continueAction(){
-        this.roundScore += this.getGameState().selectedScore
-        this.heldDice = [];        
-        this.roll()
+        this.#bankDice()
+        if (this.playingDice.length === 0) {
+            this.playingDice = [...this.currentplayer.diceLibrary]; 
+        }
+        this.#rollAndResolve();
+        return this.getGameState();
     }
 
     saveAction(){
+        this.#bankDice()
         this.currentplayer.score += this.roundScore;
         this.roundScore = 0;
 
         if (this.currentplayer.score >= this.winThreshhold) {
             this.gameState = this.gameStates.won
         }
+        this.passAction()
     }
 
     passAction(){
@@ -138,7 +158,7 @@ export class game{
                 console.log(`Held: ${this.heldDice.map(x=>x.result).join()}`);
                 
             }
-            this.currentplayer.score += this.calcScore(this.heldDice)
+            this.currentplayer.score += this.#calcScore(this.heldDice)
             console.log(`Score: ${this.currentplayer.score}`);
             
             this.turn++
@@ -211,13 +231,13 @@ export class game{
 
     // ________________________
 
-    rollPlayingDice(){
-        this.playingDice.forEach(die => {
-            console.log(die.roll());
-        });
-    }
+    // rollPlayingDice(){
+    //     this.playingDice.forEach(die => {
+    //         console.log(die.roll());
+    //     });
+    // }
 
-    calcScore(resultArr){     
+    #calcScore(resultArr){     
         if(resultArr == 'undefined') return
 
         let score = 0;
@@ -226,8 +246,8 @@ export class game{
         let excludeArr = [];       
 
         //_____________CHECKING IS STRAIGHT________________
-        let straight6 = this.isStraight(resultArr, 6)
-        let straight5 = this.isStraight(resultArr, 5)
+        let straight6 = this.#isStraight(resultArr, 6)
+        let straight5 = this.#isStraight(resultArr, 5)
 
         if(straight6.state){
             score += 1500; 
@@ -244,9 +264,9 @@ export class game{
         const groups = Object.groupBy(resultArr, ({result}) => result);        
         for(const parameterName in groups){
             const types = groups[parameterName]            
-            if(types.length >= 3 && this.isXofAKind(types.length)){
-                if(parameterName == 1){score += (this.isXofAKind(types.length) * parameterName * 10);}
-                else{score += (this.isXofAKind(types.length) * parameterName)}
+            if(types.length >= 3 && this.#isXofAKind(types.length)){
+                if(parameterName == 1){score += (this.#isXofAKind(types.length) * parameterName * 10);}
+                else{score += (this.#isXofAKind(types.length) * parameterName)}
                 message += `${parameterName}s are ${types.length} of a kind`;
                 excludeArr = [...excludeArr, ...types]
             }
@@ -263,7 +283,7 @@ export class game{
         return score;
     }
 
-    isStraight(resultArr, length = 5){
+    #isStraight(resultArr, length = 5){
         const setArr = [...new Map(resultArr.map(o => [o.result, o])).values()].sort((a, b) => a.result - b.result);
         
         if(setArr.length < length) return {state:false, starting: null}
@@ -297,7 +317,7 @@ export class game{
         return {straight, state, starting: bestStart}
     }
 
-    isXofAKind(tot){
+    #isXofAKind(tot){
         let mult = 1;
         switch (tot) {
             case 3:
@@ -384,26 +404,26 @@ export class player {
 
 
 
-const startup = () => {
-    try {
-        const p1 = new player('A');
-        // p1.setPool([2, 2, 2, 2])
-        p1.fillStrdPool()
+// const startup = () => {
+//     try {
+//         const p1 = new player('A');
+//         // p1.setPool([2, 2, 2, 2])
+//         p1.fillStrdPool()
 
-        const p2 = new player('B');
-        p2.fillStrdPool()
+//         const p2 = new player('B');
+//         p2.fillStrdPool()
 
-        const MyGame = new game(p1, p2)
+//         const MyGame = new game(p1, p2)
 
-        MyGame.startGame()
+//         MyGame.startGame()
         
-    } 
-    catch (error) {
-        console.log(error.message);
+//     } 
+//     catch (error) {
+//         console.log(error.message);
 
-        throw error
-    }   
-}
+//         throw error
+//     }   
+// }
 
 // startup()
 

@@ -57,7 +57,7 @@ const buttonControl = () => {
     let data = newGame?.getGameState()
     saveButton.disabled = !(data?.canSave)    
     continueButton.disabled = !(data?.canSave) 
-    passButton.disabled = !(data)
+    passButton.disabled = (data?.bust)
 }
 buttonControl()
 
@@ -101,3 +101,14 @@ const DiceMaker = (diceObj) => {
     return dice
 }
 
+/*
+Henry   Goal        Opponent
+0       4000        9000
+200     Round       0
+0       Selected    0
+
+Hold Die
+Score and Continue
+Score and Pass
+Give up
+*/
