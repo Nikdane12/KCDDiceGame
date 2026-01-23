@@ -70,11 +70,17 @@ startbutton.onclick = () => {
 
 const updateText = () => {
     let data = newGame.getGameState()
+    // let text = `
+    // Player: ${data.currentplayer.name}
+    // Game Score: ${data.currentplayer.score}
+    // Round Score: ${data.roundScore}
+    // Selected Score: ${data.selectedScore}
+    // `   
     let text = `
-    Player: ${data.currentplayer.name}
-    Game Score: ${data.currentplayer.score}
-    Round Score: ${data.roundScore}
-    Selected Score: ${data.selectedScore}
+    ${data.players[0].name} Goal ${data.players[1].name}
+    ${data.players[0].score} ${data.winThreshhold} ${data.players[1].score}
+    ${data.roundScore} Round ${data.roundScore}
+    ${data.selectedScore} Selected ${data.selectedScore}
     `
     bodyText.innerText = text;
 }
