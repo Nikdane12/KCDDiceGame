@@ -37,13 +37,16 @@ export class game{
     }
 
     getGameState(){
+        const selectedDice = this.playingDice.filter(d => this.heldDice.includes(d.uniqId));
+        const selectedScore = this.#calcScore(selectedDice);
+
         return {
             currentplayer: this.currentplayer,
             players: this.players,
-            canSave: this.#calcScore(this.heldDice) > 0,
-            roll: this.playingDice.map(x=>({uniqId:x.uniqId, result:x.result})), 
+            canSave: selectedScore > 0,
+            roll: this.playingDice.map(x => ({ uniqId:x.uniqId, result:x.result })), 
             bust: this.bust,
-            selectedScore: this.#calcScore(this.heldDice),
+            selectedScore: selectedScore,
             roundScore: this.roundScore,
             winThreshhold: this.winThreshhold,
             gameState: this.gameState
@@ -62,6 +65,7 @@ export class game{
         this.playingDice = [...this.currentplayer.diceLibrary];
         this.heldDice = [];
         this.bust = false;
+        this.roundScore = 0;
         
         return this.#rollAndResolve()       
     }
@@ -77,26 +81,25 @@ export class game{
     }
 
     userSelects(uniqId){
-        const heldIdx = this.heldDice.findIndex(d => d.uniqId === uniqId);
-        if (heldIdx !== -1) {
-            const [die] = this.heldDice.splice(heldIdx, 1);
-            this.playingDice.push(die);
-            return this.getGameState();
-        }
+        const idx = this.heldDice.indexOf(uniqId);
+        if (idx !== -1) this.heldDice.splice(idx, 1);
+        else this.heldDice.push(uniqId);
 
-        const playIdx = this.playingDice.findIndex(d => d.uniqId === uniqId);
-        if (playIdx !== -1) {
-            const [die] = this.playingDice.splice(playIdx, 1);
-            this.heldDice.push(die);
-        }
-        return this.getGameState()
+        return this.getGameState();
     }
 
     #bankDice(){
-        const selected = this.#calcScore(this.heldDice);
-        if (selected <= 0) return;
-        this.roundScore += selected;
+        const selectedDice = this.playingDice.filter(d => this.heldDice.includes(d.uniqId));
+        const selectedScore = this.#calcScore(selectedDice);
+  
+        if (selectedScore <= 0) return false;
+        this.roundScore += selectedScore;
+
+        const selectedSet = new Set(this.heldDice);
+        this.playingDice = this.playingDice.filter(d => !selectedSet.has(d.uniqId));
+
         this.heldDice = [];
+        return true;
     }
 
     #rollAndResolve(){
@@ -128,8 +131,9 @@ export class game{
 
         if (this.currentplayer.score >= this.winThreshhold) {
             this.gameState = this.gameStates.won
+            return this.getGameState();
         }
-        this.passAction()
+        return this.passAction()
     }
 
     passAction(){

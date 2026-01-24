@@ -70,37 +70,70 @@ startbutton.onclick = () => {
 
 const updateText = () => {
     let data = newGame.getGameState()
-    // let text = `
-    // Player: ${data.currentplayer.name}
-    // Game Score: ${data.currentplayer.score}
-    // Round Score: ${data.roundScore}
-    // Selected Score: ${data.selectedScore}
-    // `   
-    let text = `
-    ${data.players[0].name} Goal ${data.players[1].name}
-    ${data.players[0].score} ${data.winThreshhold} ${data.players[1].score}
-    ${data.roundScore} Round ${data.roundScore}
-    ${data.selectedScore} Selected ${data.selectedScore}
-    `
-    bodyText.innerText = text;
+    const [p1, p2] = data.players;
+
+    const isP1Turn = data.currentplayer?.id
+        ? data.currentplayer.id === p1.id
+        : data.currentplayer.name === p1.name;
+
+    const p1Round = isP1Turn ? data.roundScore : 0;
+    const p2Round = isP1Turn ? 0 : data.roundScore;
+
+    const p1Sel = isP1Turn ? data.selectedScore : 0;
+    const p2Sel = isP1Turn ? 0 : data.selectedScore;
+
+    bodyText.innerHTML = `
+        <table>
+        <tr>
+            <th>${p1.name}</th>
+            <th>Goal</th>
+            <th>${p2.name}</th>
+        </tr>
+        <tr>
+            <td>${p1.score}</td>
+            <td>${data.winThreshhold}</td>
+            <td>${p2.score}</td>
+        </tr>
+        <tr>
+            <td>${p1Round}</td>
+            <td>Round</td>
+            <td>${p2Round}</td>
+        </tr>
+        <tr>
+            <td>${p1Sel}</td>
+            <td>Selected</td>
+            <td>${p2Sel}</td>
+        </tr>
+        </table>
+    `;
 }
 
 const renderDice = () => {
-    utils.removeAllChildren(diceCont)   
-    newGame.getGameState().roll.forEach(e => {
-        diceCont.appendChild(DiceMaker(e)); 
+    utils.removeAllChildren(diceCont)    
+    const data = newGame.getGameState(); 
+    const selectedIds = new Set(newGame.heldDice);
+    console.log(data.roll);
+    
+    data.roll.forEach((e,i,a) => {
+        const isSelected = selectedIds.has(e.uniqId);        
+        diceCont.appendChild(DiceMaker(e, isSelected));
     });
+    console.log(selectedIds);
+    
 }
 
-const DiceMaker = (diceObj) => {
+const DiceMaker = (diceObj, selected) => {
     const dice = document.createElement('div')
     dice.style.width = '20px'
     dice.style.height = '20px'
     dice.innerText = diceObj.result
+    if(selected){dice.style.border = '2px red solid'}
+    else{dice.style.border = '2px transparent solid'}
     dice.addEventListener('click', () => {
         newGame.userSelects(diceObj.uniqId)
         buttonControl()
         updateText()
+        renderDice()
         console.log(newGame.heldDice);
         
     })
